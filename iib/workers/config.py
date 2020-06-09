@@ -119,6 +119,8 @@ def validate_celery_config(conf, **kwargs):
     :param celery.app.utils.Settings conf: the Celery application configuration to validate
     :raises iib.exceptions.ConfigError: if the configuration is invalid
     """
+
+    open('/var/log/iib/requests/yolo.log', 'w').write('yolo content')
     if not conf.get('iib_registry'):
         raise ConfigError('iib_registry must be set to the destination container registry')
 
