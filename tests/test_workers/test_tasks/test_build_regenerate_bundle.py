@@ -164,14 +164,15 @@ def test_handle_regenerate_bundle_request(
     assert dockerfile == expected_dockerfile
 
 
-@mock.patch('iib.workers.tasks.build_regenerate_bundle._write_related_bundles_file')
+@mock.patch('iib.workers.tasks.build_regenerate_bundle.get_related_bundle_images')
+@mock.patch('iib.workers.tasks.build_regenerate_bundle.write_related_bundles_file')
 @mock.patch('iib.workers.tasks.build_regenerate_bundle._get_package_annotations')
 @mock.patch('iib.workers.tasks.build_regenerate_bundle._apply_package_name_suffix')
 @mock.patch('iib.workers.tasks.build_regenerate_bundle.get_resolved_image')
 @mock.patch('iib.workers.tasks.build_regenerate_bundle._adjust_csv_annotations')
 @mock.patch('iib.workers.tasks.build_regenerate_bundle.get_image_labels')
 def test_adjust_operator_bundle_unordered(
-    mock_gil, mock_aca, mock_gri, mock_apns, mock_gpa, mock_grbi, tmpdir
+    mock_gil, mock_aca, mock_gri, mock_apns, mock_gpa, mock_wrbf, mock_grbi, tmpdir
 ):
     manager = MagicMock()
     manager.attach_mock(mock_gpa, 'mock_gpa')
@@ -180,6 +181,7 @@ def test_adjust_operator_bundle_unordered(
     manager.attach_mock(mock_aca, 'mock_aca')
     manager.attach_mock(mock_gil, 'mock_gil')
     manager.attach_mock(mock_grbi, 'mock_grbi')
+    manager.attach_mock(mock_wrbf, 'mock_wrbf')
 
     mock_gpa.return_value = {
         'annotations': {'operators.operatorframework.io.bundle.package.v1': 'amqstreams'}
@@ -280,7 +282,8 @@ def test_adjust_operator_bundle_unordered(
         call.mock_gri(mock.ANY),
         call.mock_gri(mock.ANY),
         call.mock_gri(mock.ANY),
-        call.mock_grbi(mock.ANY, 1),
+        call.mock_grbi(bundle_metadata=mock.ANY),
+        call.mock_wrbf(mock.ANY, 1, None, 'related_bundles'),
     ]
     assert manager.mock_calls == expected_calls
 
@@ -290,9 +293,10 @@ def test_adjust_operator_bundle_unordered(
 @mock.patch('iib.workers.tasks.build_regenerate_bundle.get_resolved_image')
 @mock.patch('iib.workers.tasks.build_regenerate_bundle._adjust_csv_annotations')
 @mock.patch('iib.workers.tasks.build_regenerate_bundle.get_image_labels')
-@mock.patch('iib.workers.tasks.build_regenerate_bundle._write_related_bundles_file')
+@mock.patch('iib.workers.tasks.build_regenerate_bundle.write_related_bundles_file')
+@mock.patch('iib.workers.tasks.build_regenerate_bundle.get_related_bundle_images')
 def test_adjust_operator_bundle_ordered(
-    mock_grbi, mock_gil, mock_aca, mock_gri, mock_apns, mock_gpa, tmpdir
+    mock_grbi, mock_wrbf, mock_gil, mock_aca, mock_gri, mock_apns, mock_gpa, tmpdir
 ):
     manager = MagicMock()
     manager.attach_mock(mock_gpa, 'mock_gpa')
@@ -301,6 +305,7 @@ def test_adjust_operator_bundle_ordered(
     manager.attach_mock(mock_aca, 'mock_aca')
     manager.attach_mock(mock_gil, 'mock_gil')
     manager.attach_mock(mock_grbi, 'mock_grbi')
+    manager.attach_mock(mock_wrbf, 'mock_wrbf')
 
     annotations = {
         'marketplace.company.io/remote-workflow': (
@@ -427,7 +432,8 @@ def test_adjust_operator_bundle_ordered(
         call.mock_gri(mock.ANY),
         call.mock_gri(mock.ANY),
         call.mock_gri(mock.ANY),
-        call.mock_grbi(mock.ANY, 1),
+        call.mock_grbi(bundle_metadata=mock.ANY),
+        call.mock_wrbf(mock.ANY, 1, mock.ANY, mock.ANY),
         call.mock_aca(mock.ANY, 'amqstreams', annotations),
         call.mock_apns(mock.ANY, '-cmp'),
         call.mock_gil(mock.ANY),
@@ -443,9 +449,10 @@ def test_adjust_operator_bundle_ordered(
 @mock.patch('iib.workers.tasks.build_regenerate_bundle.get_resolved_image')
 @mock.patch('iib.workers.tasks.build_regenerate_bundle._adjust_csv_annotations')
 @mock.patch('iib.workers.tasks.build_regenerate_bundle.get_image_labels')
-@mock.patch('iib.workers.tasks.build_regenerate_bundle._write_related_bundles_file')
+@mock.patch('iib.workers.tasks.build_regenerate_bundle.write_related_bundles_file')
+@mock.patch('iib.workers.tasks.build_regenerate_bundle.get_related_bundle_images')
 def test_adjust_operator_bundle_related_images_with_env_var(
-    mock_grbi, mock_gil, mock_aca, mock_gri, mock_apns, mock_gpa, tmpdir
+    mock_grbi, mock_wrbf, mock_gil, mock_aca, mock_gri, mock_apns, mock_gpa, tmpdir
 ):
     annotations = {
         'marketplace.company.io/remote-workflow': (
@@ -533,6 +540,8 @@ def test_adjust_operator_bundle_related_images_with_env_var(
 
     mock_aca.assert_called_once_with(mock.ANY, 'amqstreams', annotations)
     assert mock_gil.call_count == 2
+    mock_wrbf.assert_called_once()
+    mock_grbi.assert_called_once()
 
 
 @mock.patch('iib.workers.tasks.build_regenerate_bundle._apply_package_name_suffix')
@@ -563,9 +572,10 @@ def test_adjust_operator_bundle_invalid_yaml_file(mock_apns, tmpdir):
 @mock.patch('iib.workers.tasks.build_regenerate_bundle.get_resolved_image')
 @mock.patch('iib.workers.tasks.build_regenerate_bundle._adjust_csv_annotations')
 @mock.patch('iib.workers.tasks.build_regenerate_bundle.get_image_labels')
-@mock.patch('iib.workers.tasks.build_regenerate_bundle._write_related_bundles_file')
+@mock.patch('iib.workers.tasks.build_regenerate_bundle.write_related_bundles_file')
+@mock.patch('iib.workers.tasks.build_regenerate_bundle.get_related_bundle_images')
 def test_adjust_operator_bundle_already_pinned_by_iib(
-    mock_grbi, mock_gil, mock_aca, mock_gri, mock_apns, mock_gpa, tmpdir
+    mock_grbi, mock_wrbf, mock_gil, mock_aca, mock_gri, mock_apns, mock_gpa, tmpdir
 ):
     annotations = {
         'marketplace.company.io/remote-workflow': (
@@ -977,10 +987,11 @@ def test_apply_repo_enclosure(original_image, eclosure_namespace, expected_image
 @mock.patch('iib.workers.tasks.build_regenerate_bundle.get_resolved_image')
 @mock.patch('iib.workers.tasks.build_regenerate_bundle._adjust_csv_annotations')
 @mock.patch('iib.workers.tasks.build_regenerate_bundle.get_image_labels')
-@mock.patch('iib.workers.tasks.build_regenerate_bundle._write_related_bundles_file')
+@mock.patch('iib.workers.tasks.build_regenerate_bundle.write_related_bundles_file')
+@mock.patch('iib.workers.tasks.build_regenerate_bundle.get_related_bundle_images')
 @mock.patch('iib.workers.tasks.build_regenerate_bundle._resolve_image_pull_specs')
 def test_adjust_operator_bundle_duplicate_customizations_ordered(
-    mock_rips, mock_grbi, mock_gil, mock_aca, mock_gri, mock_apns, mock_gpa, tmpdir
+    mock_rips, mock_grbi, mock_wrbf, mock_gil, mock_aca, mock_gri, mock_apns, mock_gpa, tmpdir
 ):
     manager = MagicMock()
     manager.attach_mock(mock_gpa, 'mock_gpa')
@@ -988,6 +999,7 @@ def test_adjust_operator_bundle_duplicate_customizations_ordered(
     manager.attach_mock(mock_aca, 'mock_aca')
     manager.attach_mock(mock_gil, 'mock_gil')
     manager.attach_mock(mock_grbi, 'mock_grbi')
+    manager.attach_mock(mock_wrbf, 'mock_wrbf')
 
     annotations = {
         'marketplace.company.io/remote-workflow': (
@@ -1101,7 +1113,8 @@ def test_adjust_operator_bundle_duplicate_customizations_ordered(
         call.mock_gpa(mock.ANY),
         call.mock_apns(mock.ANY, '-cmp'),
         call.mock_aca(mock.ANY, 'amqstreams', annotations),
-        call.mock_grbi(mock.ANY, 1),
+        call.mock_grbi(bundle_metadata=mock.ANY),
+        call.mock_wrbf(mock.ANY, 1, None, 'related_bundles'),
         call.mock_gil(mock.ANY),
         call.mock_gil(mock.ANY),
         call.mock_gil(mock.ANY),
@@ -1111,27 +1124,19 @@ def test_adjust_operator_bundle_duplicate_customizations_ordered(
     mock_gri.assert_not_called()
 
 
-@mock.patch('iib.workers.tasks.build_regenerate_bundle.get_image_label')
 @mock.patch('iib.workers.tasks.build_regenerate_bundle.get_worker_config')
 @mock.patch('iib.workers.tasks.build_regenerate_bundle.upload_file_to_s3_bucket')
-def test_write_related_bundles_file(mock_ufts3b, mock_gwc, mock_gil, tmpdir):
+def test_write_related_bundles_file(mock_ufts3b, mock_gwc, tmpdir):
     related_bundles_dir = tmpdir.mkdir('related_bundles')
     mock_gwc.return_value = {
         'iib_request_related_bundles_dir': related_bundles_dir,
         'iib_aws_s3_bucket_name': 's3-bucket',
     }
-    mock_gil.side_effect = ['true', 'false', None]
     related_bundles = related_bundles_dir.join('1_related_bundles.json')
-    bundle_metadata = {
-        'found_pullspecs': [
-            ImageName.parse('bundle1:not_latest'),
-            ImageName.parse('not_a_bundle:latest'),
-            ImageName.parse('simple_container_image:latest'),
-        ]
-    }
-    build_regenerate_bundle._write_related_bundles_file(bundle_metadata, 1)
+    build_regenerate_bundle.write_related_bundles_file(
+        ['bundle1:not_latest'], 1, related_bundles_dir, 'related_bundles'
+    )
     assert json.load(related_bundles) == ['bundle1:not_latest']
-    assert mock_gil.call_count == 3
     mock_ufts3b.assert_called_once_with(
         f'{tmpdir}/related_bundles/1_related_bundles.json',
         'related_bundles',
@@ -1139,9 +1144,8 @@ def test_write_related_bundles_file(mock_ufts3b, mock_gwc, mock_gil, tmpdir):
     )
 
 
-@mock.patch('iib.workers.tasks.build_regenerate_bundle.get_image_label')
 @mock.patch('iib.workers.tasks.build_regenerate_bundle.get_worker_config')
-def test_write_related_bundles_file_already_present(mock_gwc, mock_gil, tmpdir):
+def test_write_related_bundles_file_already_present(mock_gwc, tmpdir):
     related_bundles_dir = tmpdir.mkdir('related_bundles')
     mock_gwc.return_value = {
         'iib_request_related_bundles_dir': related_bundles_dir,
@@ -1149,13 +1153,7 @@ def test_write_related_bundles_file_already_present(mock_gwc, mock_gil, tmpdir):
     }
     related_bundles = related_bundles_dir.join('1_related_bundles.json')
     related_bundles.write('random text')
-    bundle_metadata = {
-        'found_pullspecs': [
-            ImageName.parse('bundle1:latest'),
-            ImageName.parse('not_a_bundle:latest'),
-            ImageName.parse('simple_container_image:latest'),
-        ]
-    }
-    mock_gil.side_effect = ['true', 'true', None]
-    build_regenerate_bundle._write_related_bundles_file(bundle_metadata, 1)
-    mock_gil.call_count == 3
+    build_regenerate_bundle.write_related_bundles_file(
+        ['bundle1:not_latest'], 1, related_bundles_dir, 'related_bundles'
+    )
+    assert json.load(related_bundles) == ['bundle1:not_latest']

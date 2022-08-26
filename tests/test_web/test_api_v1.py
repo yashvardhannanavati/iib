@@ -197,7 +197,8 @@ def test_get_builds_invalid_type(app, client, db):
     assert rv.json == {
         'error': (
             'wrong-type is not a valid build request type. Valid request_types are: '
-            'generic, add, rm, regenerate-bundle, merge-index-image, create-empty-index'
+            'generic, add, rm, regenerate-bundle, merge-index-image, '
+            'create-empty-index, recursive-related-bundles'
         )
     }
 
@@ -2204,3 +2205,54 @@ def test_get_build_related_bundles_s3_configured(
     assert rv.status_code == expected['status']
     assert rv.mimetype == expected['mimetype']
     assert rv.json == expected['json']
+
+
+@mock.patch('iib.web.api_v1.handle_recursive_related_bundles_request')
+@mock.patch('iib.web.api_v1.messaging.send_message_for_state_change')
+def test_recursive_related_bundles_success(mock_smfsc, mock_hrbr, db, auth_env, client):
+    data = {'parent_bundle_image': 'registry.example.com/bundle-image:latest'}
+
+    # Assume a timestamp to simplify tests
+    _timestamp = '2020-02-12T17:03:00Z'
+    _expiration_timestamp = '2020-02-15T17:03:00Z'
+
+    response_json = {
+        'arches': [],
+        'batch': 1,
+        'batch_annotations': None,
+        'parent_bundle_image': 'registry.example.com/bundle-image:latest',
+        'parent_bundle_image_resolved': None,
+        'logs': {
+            'url': 'http://localhost/api/v1/builds/1/logs',
+            'expiration': '2020-02-15T17:03:00Z',
+        },
+        'organization': None,
+        'nested_bundles': {
+            'expiration': '2020-02-15T17:03:00Z',
+            'url': 'http://localhost/api/v1/builds/1/nested-bundles',
+        },
+        'id': 1,
+        'request_type': 'recursive-related-bundles',
+        'state': 'in_progress',
+        'state_history': [
+            {
+                'state': 'in_progress',
+                'state_reason': 'The request was initiated',
+                'updated': _timestamp,
+            }
+        ],
+        'state_reason': 'The request was initiated',
+        'updated': _timestamp,
+        'user': 'tbrady@DOMAIN.LOCAL',
+    }
+
+    rv = client.post('/api/v1/builds/recursive-related-bundles', json=data, environ_base=auth_env)
+    assert rv.status_code == 201
+    rv_json = rv.json
+    rv_json['state_history'][0]['updated'] = _timestamp
+    rv_json['updated'] = _timestamp
+    rv_json['logs']['expiration'] = _expiration_timestamp
+    rv_json['nested_bundles']['expiration'] = _expiration_timestamp
+    assert response_json == rv_json
+    mock_hrbr.apply_async.assert_called_once()
+    mock_smfsc.assert_called_once_with(mock.ANY, new_batch_msg=True)

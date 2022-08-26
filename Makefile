@@ -1,6 +1,6 @@
 # Set the default composer while allowing user to overwrite via the
 # environment variable IIB_COMPOSE_ENGINE.
-IIB_COMPOSE_ENGINE ?= docker-compose
+IIB_COMPOSE_ENGINE ?= podman-compose
 
 # Declare non-file targets to avoid potential conflict with files
 # of the same name.
@@ -50,7 +50,7 @@ test:
 	@tox
 
 ca-bundle.crt:
-	@cp -f /etc/pki/tls/certs/ca-bundle.crt .
+	@cp -f /etc/pki/tls/ca-chain.crt .
 
 iib-data:
 	@mkdir -p iib_data/registry

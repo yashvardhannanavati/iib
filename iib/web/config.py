@@ -2,7 +2,7 @@
 import os
 import tempfile
 
-TEST_DB_FILE = os.path.join(tempfile.gettempdir(), 'iib.db')
+TEST_DB_FILE = os.path.join(tempfile.gettempdir(), 'iib_recursive.db')
 
 
 class Config(object):
@@ -25,9 +25,11 @@ class Config(object):
     IIB_REQUEST_DATA_DAYS_TO_LIVE = 3
     IIB_REQUEST_LOGS_DIR = None
     IIB_REQUEST_RELATED_BUNDLES_DIR = None
+    IIB_REQUEST_RECURSIVE_RELATED_BUNDLES_DIR = None
     IIB_USER_TO_QUEUE = {}
     IIB_WORKER_USERNAMES = []
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///iib_082522.db'
 
 
 class ProductionConfig(Config):
@@ -46,6 +48,7 @@ class DevelopmentConfig(Config):
     IIB_MESSAGING_URLS = ['amqps://message-broker:5671']
     IIB_REQUEST_LOGS_DIR = '/var/log/iib/requests'
     IIB_REQUEST_RELATED_BUNDLES_DIR = '/var/lib/requests/related_bundles'
+    IIB_REQUEST_RECURSIVE_RELATED_BUNDLES_DIR = '/var/lib/requests/recursive_related_bundles'
     SQLALCHEMY_DATABASE_URI = 'postgresql+psycopg2://iib:iib@db:5432/iib'
     LOGIN_DISABLED = True
 

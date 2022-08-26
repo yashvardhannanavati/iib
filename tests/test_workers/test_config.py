@@ -239,8 +239,9 @@ def test_validate_celery_config_request_logs_dir_misconfigured(tmpdir, file_type
         (
             {'iib_aws_s3_bucket_name': 'bucket'},
             (
-                '"iib_request_logs_dir" and "iib_request_related_bundles_dir" '
-                'must be set when iib_aws_s3_bucket_name is set.'
+                '"iib_request_logs_dir", "iib_request_related_bundles_dir" and '
+                '"iib_request_recursive_related_bundles_dir" must be set when '
+                'iib_aws_s3_bucket_name is set.'
             ),
         ),
         (
@@ -274,6 +275,7 @@ def test_validate_celery_config_invalid_s3_env_vars():
         'iib_aws_s3_bucket_name': 'bucket',
         'iib_request_logs_dir': 'some-dir',
         'iib_request_related_bundles_dir': 'some-other-dir',
+        'iib_request_recursive_related_bundles_dir': 'yet-antoher-dir',
     }
     error = (
         '"AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY" and "AWS_DEFAULT_REGION" '
