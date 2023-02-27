@@ -12,9 +12,8 @@ from flask_login import UserMixin, current_user
 from flask_sqlalchemy.model import DefaultMeta
 import sqlalchemy
 from sqlalchemy.ext.declarative import declared_attr
-from sqlalchemy.orm import joinedload, load_only, Mapped, MappedColumn, validates
+from sqlalchemy.orm import joinedload, load_only, Mapped, validates
 from sqlalchemy.orm.strategy_options import _AbstractLoad
-from sqlalchemy.orm.relationships import RelationshipProperty
 from werkzeug.exceptions import Forbidden
 
 from iib.exceptions import ValidationError
