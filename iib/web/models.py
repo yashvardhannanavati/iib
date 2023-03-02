@@ -360,7 +360,7 @@ class Request(db.Model):
     batch_id: Mapped[int] = db.mapped_column(db.ForeignKey('batch.id'), index=True)
     batch: Mapped['Batch'] = db.relationship('Batch', back_populates='requests')
     request_state_id: Mapped[int] = db.mapped_column(
-        db.Integer, db.ForeignKey('request_state.id'), index=True, unique=True
+        db.ForeignKey('request_state.id'), index=True, unique=True
     )
     # This maps to a value in RequestTypeMapping
     type: Mapped[int]
@@ -425,6 +425,7 @@ class Request(db.Model):
                 raise ValidationError(f'A {self.state.state_name} request cannot change states')
 
         request_state = RequestState(state=state_int, state_reason=state_reason)
+
         self.states.append(request_state)
         # Send the changes queued up in SQLAlchemy to the database's transaction buffer.
         # This will generate an ID that can be used below.
@@ -661,11 +662,15 @@ class Batch(db.Model):
         # in the batch
         requests = (
             db.session.query(Request)
-            .options(joinedload(Request.state).load_only(RequestState.state), load_only())
+            .options(
+                joinedload(Request.state).load_only(RequestState.state),
+                load_only(Request.id, Request.batch_id),
+            )
             .filter(Request.batch_id == self.id)
             .order_by(Request.id)
             .all()
         )
+
         return [RequestStateMapping(request.state.state).name for request in requests]
 
     @property
@@ -1035,7 +1040,7 @@ class RequestAdd(Request, RequestIndexImageMixin):
     id: Mapped[int] = db.mapped_column(
         db.Integer, db.ForeignKey('request.id'), autoincrement=False, primary_key=True
     )
-    bundles: Mapped['Image'] = db.relationship('Image', secondary=RequestAddBundle.__table__)
+    bundles: Mapped[List['Image']] = db.relationship('Image', secondary=RequestAddBundle.__table__)
     deprecation_list: Mapped[List['Image']] = db.relationship(
         'Image', secondary=RequestAddBundleDeprecation.__table__
     )
@@ -1620,7 +1625,9 @@ class RequestState(db.Model):
     state_reason: Mapped[str]
     updated: Mapped[datetime] = db.mapped_column(db.DateTime(), default=sqlalchemy.func.now())
 
-    request = db.relationship('Request', foreign_keys=[request_id], back_populates='states')
+    request: Mapped['Request'] = db.relationship(
+        'Request', foreign_keys=[request_id], back_populates='states'
+    )
 
     @property
     def state_name(self) -> Optional[str]:
@@ -1640,7 +1647,7 @@ class User(db.Model, UserMixin):
 
     id: Mapped[int] = db.mapped_column(primary_key=True)
     username: Mapped[str] = db.mapped_column(index=True, unique=True)
-    requests: Mapped['Request'] = db.relationship(
+    requests: Mapped[List['Request']] = db.relationship(
         'Request', foreign_keys=[Request.user_id], back_populates='user'
     )
 

@@ -210,7 +210,7 @@ def test_get_builds_invalid_batch(batch, app, client, db):
     assert rv.json == {'error': 'The batch must be a positive integer'}
 
 
-@mock.patch('sqlalchemy.engine.base.Engine.execute')
+@mock.patch('sqlalchemy.engine.base.Engine.connect')
 def test_get_healthcheck_db_fail(mock_db_execute, app, client, db):
     mock_db_execute.side_effect = DisconnectionError('DB failed')
     rv = client.get('/api/v1/healthcheck')
