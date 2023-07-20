@@ -18,10 +18,6 @@ setup(
         'flask-sqlalchemy',
         'importlib-resources',
         'python-dev-tools'
-        'cryptography',
-        'gssapi',
-        'krb5',
-        'pyspnego',
         'operator-manifest',
         'psycopg2-binary',
         'python-memcached ',
