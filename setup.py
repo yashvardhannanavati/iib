@@ -17,6 +17,7 @@ setup(
         'flask-migrate',
         'flask-sqlalchemy',
         'importlib-resources',
+        'python-dev-tools'
         'cryptography',
         'gssapi',
         'krb5',
