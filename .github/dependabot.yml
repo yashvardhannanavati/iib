@@ -11,11 +11,7 @@ updates:
     schedule:
       interval: "daily"
     open-pull-requests-limit: 10
-    groups:
-      kerberos-dependencies:
-        patterns:
-          - "cryptography"
-          - "krb5"
-          - "gssapi"
-          - "pyspnego"
-          - "requests-kerberos"
+    ignore:
+      - dependency-name: "krb5"
+      - dependency-name: "gssapi"
+      - dependency-name: "requests-kerberos"
