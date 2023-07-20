@@ -16,6 +16,7 @@ setup(
         'flask-login',
         'flask-migrate',
         'flask-sqlalchemy',
+        'gssapi',
         'importlib-resources',
         'krb5',
         'operator-manifest',
