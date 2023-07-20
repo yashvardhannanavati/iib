@@ -13,9 +13,10 @@ updates:
     open-pull-requests-limit: 10
     groups:
       kerberos-dependencies:
-        - "cryptography"
-        - "krb5"
-        - "gssapi"
-        - "pyspnego"
-        - "requests-kerberos"
+        patterns:
+          - "cryptography"
+          - "krb5"
+          - "gssapi"
+          - "pyspnego"
+          - "requests-kerberos"
         
