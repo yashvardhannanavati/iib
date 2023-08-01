@@ -1,0 +1,9 @@
+{
+  "enabled": true,
+  "enabledManagers": ["docker-compose", "dockerfile", "github-actions", "pip_requirements"],
+  "branchConcurrentLimit": 5,
+  "docker-compose": {
+    "fileMatch": ["^podman-compose\\.yml$"]
+  },
+  "reviewers": ["team:exd-guild-hello-operator"]
+}
