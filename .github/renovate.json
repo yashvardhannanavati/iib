@@ -1,6 +1,6 @@
 {
   "enabled": true,
-  "enabledManagers": ["docker-compose", "dockerfile", "github-actions", "pip_requirements"],
+  "enabledManagers": ["docker-compose", "dockerfile", "github-actions", "pip_requirements", "pyenv"],
   "branchConcurrentLimit": 5,
   "docker-compose": {
     "fileMatch": ["^podman-compose\\.yml$"]
