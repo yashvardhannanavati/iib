@@ -784,9 +784,9 @@ typing-extensions==4.5.0 \
     #   iib (setup.py)
     #   opentelemetry-sdk
     #   sqlalchemy
-urllib3==1.26.17 \
-    --hash=sha256:24d6a242c28d29af46c3fae832c36db3bbebcc533dd1bb549172cd739c82df21 \
-    --hash=sha256:94a757d178c9be92ef5539b8840d48dc9cf1b2709c9d6b588232a055c524458b
+urllib3==1.26.19 \
+    --hash=sha256:37a0344459b199fce0e80b0d3569837ec6b6937435c5244e7fd73fa6006830f3 \
+    --hash=sha256:3e3d753a8618b86d7de333b4223005f68720bcd6a7d2bcb9fbd2229ec7c1e429
     # via
     #   botocore
     #   requests
