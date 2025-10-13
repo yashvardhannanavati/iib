@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+<<<<<<< HEAD
 import json
+=======
+>>>>>>> 9539ebd (Handling of fbc-operations for containerized IIB)
 import logging
 import os
 import tempfile
@@ -12,10 +15,22 @@ from iib.workers.api_utils import set_request_state
 from iib.workers.config import get_worker_config
 from iib.workers.tasks.build import (
     _add_label_to_index,
+<<<<<<< HEAD
     _cleanup,
     _update_index_image_build_state,
 )
 from iib.workers.tasks.celery import app
+=======
+    _build_image,
+    _cleanup,
+    _create_and_push_manifest_list,
+    _push_image,
+    _update_index_image_build_state,
+    _update_index_image_pull_spec,
+)
+from iib.workers.tasks.celery import app
+from iib.workers.tasks.fbc_utils import merge_catalogs_dirs
+>>>>>>> 9539ebd (Handling of fbc-operations for containerized IIB)
 from iib.workers.tasks.git_utils import (
     create_mr,
     push_configs_to_git,
@@ -25,6 +40,10 @@ from iib.workers.tasks.git_utils import (
 )
 from iib.workers.tasks.konflux_utils import wait_for_pipeline_completion, find_pipelinerun
 from iib.workers.tasks.opm_operations import (
+<<<<<<< HEAD
+=======
+    opm_registry_add_fbc_fragment,
+>>>>>>> 9539ebd (Handling of fbc-operations for containerized IIB)
     Opm,
     opm_registry_add_fbc_fragment_containerized,
 )
@@ -41,7 +60,10 @@ from iib.workers.tasks.utils import (
     request_logger,
     set_registry_token,
     RequestConfigFBCOperation,
+<<<<<<< HEAD
     change_dir,
+=======
+>>>>>>> 9539ebd (Handling of fbc-operations for containerized IIB)
 )
 
 __all__ = ['handle_containerized_fbc_operation_request']
@@ -134,6 +156,7 @@ def handle_containerized_fbc_operation_request(
         )
 
         # TODO - FIX the DB PATH
+<<<<<<< HEAD
         artifact_index_db_file = os.path.join(
             artifact_dir, get_worker_config()['temp_index_db_path']
         )
@@ -142,6 +165,10 @@ def handle_containerized_fbc_operation_request(
         if not os.path.exists(artifact_index_db_file):
             log.error("Artifact DB file not found at %s", artifact_index_db_file)
             raise IIBError(f"Artifact DB file not found at {artifact_index_db_file}")
+=======
+
+        artifact_index_db_file = os.path.join(artifact_dir, "var/lib/iib/_hidden/do.not.edit.db")
+>>>>>>> 9539ebd (Handling of fbc-operations for containerized IIB)
 
         index_git_repo = index_to_gitlab_push_map[from_index]
         token_name, git_token = get_git_token(index_git_repo)
@@ -150,13 +177,24 @@ def handle_containerized_fbc_operation_request(
         local_git_repo_path = f"{temp_dir}/git/{branch}"
         os.makedirs(local_git_repo_path, exist_ok=True)
 
+<<<<<<< HEAD
         # TODO - GitClone takes time - can we keep the copy and just pull the difference? (6min on dev-env)
+=======
+        # TODO - GitClone takes time - can we keep the copy and just pull the difference?
+>>>>>>> 9539ebd (Handling of fbc-operations for containerized IIB)
         clone_git_repo(index_git_repo, branch, token_name, git_token, local_git_repo_path)
 
         localized_git_catalog_path = os.path.join(local_git_repo_path, 'configs')
         if not os.path.exists(localized_git_catalog_path):
             raise IIBError(f"Catalogs directory not found in {local_git_repo_path}")
 
+<<<<<<< HEAD
+=======
+        log.debug("Artifact DB path %s", artifact_index_db_file)
+        if not os.path.exists(artifact_index_db_file):
+            raise IIBError(f"Artifact DB file not found at {artifact_index_db_file}")
+
+>>>>>>> 9539ebd (Handling of fbc-operations for containerized IIB)
         # Process all resolved fbc fragments at once
         tmp_catalog_path, tmp_indexdb_path, _ = opm_registry_add_fbc_fragment_containerized(
             request_id=request_id,
@@ -193,6 +231,7 @@ def handle_containerized_fbc_operation_request(
                 commit_message=f"Commit for request {request_id}",
             )
 
+<<<<<<< HEAD
             last_commit_sha = get_last_commit_sha(local_repo_path=local_git_repo_path)
             if result:
                 relative_db_path = get_worker_config()['temp_index_db_path']
@@ -200,12 +239,18 @@ def handle_containerized_fbc_operation_request(
                 # TODO - When we will use the Token here - what is the use-case?
                 with change_dir(cwd):
                     push_oras_artifact(artifact_ref=artifact_ref, local_path=relative_db_path)
+=======
+            if result:
+                # TODO - When we will use the Token here - what is the use-case?
+                push_oras_artifact(artifact_ref=artifact_ref, local_path=tmp_indexdb_path)
+>>>>>>> 9539ebd (Handling of fbc-operations for containerized IIB)
 
     set_request_state(request_id, 'in_progress', 'Waiting on KONFLUX build.')
 
     #####
     arches = prebuild_info['arches']
 
+<<<<<<< HEAD
     pipelines = find_pipelinerun(last_commit_sha)
 
     wait_for_pipeline_completion(pipelines[0])
@@ -223,6 +268,27 @@ def handle_containerized_fbc_operation_request(
     #     resolved_prebuild_from_index=from_index_resolved,
     #     add_or_rm=True,
     # )
+=======
+    last_commit_sha = get_last_commit_sha(local_repo_path=local_git_repo_path)
+
+    pipelines = find_pipelinerun(last_commit_sha)
+
+    wait_for_pipeline_completion()
+    # TODO - GET this from KONFLUX build
+    # output_pull_spec = _create_and_push_manifest_list(request_id, arches, build_tags)
+    ######
+
+    _update_index_image_pull_spec(
+        output_pull_spec=output_pull_spec,
+        request_id=request_id,
+        arches=arches,
+        from_index=from_index,
+        overwrite_from_index=overwrite_from_index,
+        overwrite_from_index_token=overwrite_from_index_token,
+        resolved_prebuild_from_index=from_index_resolved,
+        add_or_rm=True,
+    )
+>>>>>>> 9539ebd (Handling of fbc-operations for containerized IIB)
     _cleanup()
     set_request_state(
         request_id,
