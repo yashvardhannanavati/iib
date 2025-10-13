@@ -1116,6 +1116,9 @@ def get_image_label(pull_spec: str, label: str) -> str:
     :rtype: str
     """
     log.debug('Getting the label of %s from %s', label, pull_spec)
+    if "index.db" in pull_spec:
+        raise IIBError(f'Cannot get label "{label}" from {pull_spec}')
+
     return get_image_labels(pull_spec).get(label, '')
 
 
@@ -1301,3 +1304,25 @@ def get_bundle_metadata(
         for pullspec in operator_csv.get_pullspecs():
             bundle_metadata['found_pullspecs'].add(pullspec)
     return bundle_metadata
+
+
+@contextmanager
+def change_dir(new_dir: str) -> Generator[None, Any, None]:
+    """
+    Context manager for temporarily changing the current working directory.
+
+    This context manager allows temporary switching to a new directory during
+    the execution of a block of code. Once the block is exited, it ensures the
+    working directory is reverted to its original state, even in cases where
+    an error occurs within the block.
+
+    :param str new_dir: new directory to switch to
+    :raises OSError: If changing to the new directory or reverting to the
+            original directory fails.
+    """
+    prev_dir = os.getcwd()
+    try:
+        os.chdir(new_dir)
+        yield
+    finally:
+        os.chdir(prev_dir)
