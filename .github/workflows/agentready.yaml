@@ -1,0 +1,27 @@
+---
+name: AgentReady Assessment
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  agentready:
+    name: Check repo with agentready
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6
+
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
+        with:
+          python-version: '3.12'
+
+      - name: Install agentready
+        run: python -m pip install agentready==2.35.1
+
+      - name: Run agentready check
+        run: |
+          agentready --version
+          agentready assess --config "${GITHUB_WORKSPACE}"/.agentready/config/.agentready-config.yaml .
